@@ -1,0 +1,32 @@
+{
+"users": [
+{
+    "user_id": "Alice",
+    "hash": "$argon2i$v=19$m=65536,t=2,p=1$19XuAZwx9WkVLouR9Td+cw$i+1VZ/RY++LeTkhFaiS/r7LO1LDb1fHOUp11gnbmRsg"
+},
+{
+    "user_id": "Bob",
+    "hash": "$argon2i$v=19$m=65536,t=2,p=1$QHOBA7BpWv7Bn22asQD5XQ$lzLtCAi9PEqXHrHulCeSelslARRXucylUsLCY8EhE2g"
+},
+{
+    "user_id": "Cecilia",
+    "hash": "$argon2i$v=19$m=65536,t=2,p=1$aj9W9zLwZw20S7P0Zelu0g$zXzlrXpPerv2maBy5gDDHERFtTGsKtEGXfHFJB73gHE"
+},
+{
+    "user_id": "David",
+    "hash": "$argon2i$v=19$m=65536,t=2,p=1$AVXwuztol+SBOd184wJ/xg$QIiCkVn6gmSYQWPPOg7kAln7VmH/69l9GyBCpqoNkT4"
+},
+{
+    "user_id": "Erica",
+    "hash": "$argon2i$v=19$m=65536,t=2,p=1$iP376BYKSI8MRgxlc8OuUA$he2bYhjyO38a5jx3S4xRXPG1L0OEZwBJbAO0hbw8hD4"
+},
+{
+    "user_id": "Fred",
+    "hash": "$argon2i$v=19$m=65536,t=2,p=1$PteU97SbBOTWWVgbJfNeXw$EOUAru8+MXD/KKqfBn2gohlFSv9fpdEvIY3LOAePE3k"
+},
+{
+    "user_id": "George",
+    "hash": "$argon2i$v=19$m=65536,t=2,p=1$eL3TYfx8SANBzrR3XOZ8TA$ohfQERnJl6Pf74+Ybfm3CkedTK+mz3MeJZbSeW2UOUo"
+}
+]
+}
