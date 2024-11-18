@@ -35,6 +35,7 @@ public class ClientMain {
             String print1 = executeMethod(() -> printServer.print(accessToken, refreshToken, "document.txt", "Printer1"));
             String print2 = executeMethod(() -> printServer.print(accessToken, refreshToken, "file.txt", "Printer1"));
             String print3 = executeMethod(() -> printServer.print(accessToken, refreshToken, "assignment.txt", "Printer1"));
+            
 
             System.out.println(print1);
             System.out.println(print2);
