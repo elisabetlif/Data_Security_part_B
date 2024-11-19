@@ -15,26 +15,32 @@
 {
     "user_id": "Cecilia",
     "hash": "$argon2i$v=19$m=65536,t=2,p=1$aj9W9zLwZw20S7P0Zelu0g$zXzlrXpPerv2maBy5gDDHERFtTGsKtEGXfHFJB73gHE",
-    "role": "Power user",
+    "role": "Power_user",
     "permissions" : ["topQueue","print","queue", "restart"]
 },
 {
     "user_id": "David",
     "hash": "$argon2i$v=19$m=65536,t=2,p=1$AVXwuztol+SBOd184wJ/xg$QIiCkVn6gmSYQWPPOg7kAln7VmH/69l9GyBCpqoNkT4",
-    "role": "ser",
-    "permissions" : ["topQueue","print","queue", "restart"]
+    "role": "User",
+    "permissions" : ["print","queue"]
 },
 {
     "user_id": "Erica",
-    "hash": "$argon2i$v=19$m=65536,t=2,p=1$iP376BYKSI8MRgxlc8OuUA$he2bYhjyO38a5jx3S4xRXPG1L0OEZwBJbAO0hbw8hD4"
+    "hash": "$argon2i$v=19$m=65536,t=2,p=1$iP376BYKSI8MRgxlc8OuUA$he2bYhjyO38a5jx3S4xRXPG1L0OEZwBJbAO0hbw8hD4",
+    "role": "User",
+    "permissions" : ["print","queue"]
 },
 {
     "user_id": "Fred",
-    "hash": "$argon2i$v=19$m=65536,t=2,p=1$PteU97SbBOTWWVgbJfNeXw$EOUAru8+MXD/KKqfBn2gohlFSv9fpdEvIY3LOAePE3k"
+    "hash": "$argon2i$v=19$m=65536,t=2,p=1$PteU97SbBOTWWVgbJfNeXw$EOUAru8+MXD/KKqfBn2gohlFSv9fpdEvIY3LOAePE3k",
+    "role": "User",
+    "permissions" : ["print","queue"]
 },
 {
     "user_id": "George",
-    "hash": "$argon2i$v=19$m=65536,t=2,p=1$eL3TYfx8SANBzrR3XOZ8TA$ohfQERnJl6Pf74+Ybfm3CkedTK+mz3MeJZbSeW2UOUo"
+    "hash": "$argon2i$v=19$m=65536,t=2,p=1$eL3TYfx8SANBzrR3XOZ8TA$ohfQERnJl6Pf74+Ybfm3CkedTK+mz3MeJZbSeW2UOUo",
+    "role": "User",
+    "permissions" : ["print","queue"]
 }
 ]
 }

@@ -28,9 +28,11 @@ public class SessionManager {
     /**
      * Creates a new access token (JWT)
      * @param username Username
+     * @param role User's role
+     * @param permissions List of permissions
      * @return Access token (JWT)
      */
-    public String createAccessToken(String username) {
+    public String createAccessToken(String username, String role,List<String> permissions ) {
         long nowMillis = System.currentTimeMillis();
         Date now = new Date(nowMillis);
         Date expiry = new Date(nowMillis + accessTokenValidity);
@@ -41,6 +43,8 @@ public class SessionManager {
                 .setSubject(username)
                 .setIssuedAt(now)
                 .setExpiration(expiry)
+                .claim("role", role) 
+                .claim("permissions", permissions)
                 .signWith(secretKey, SignatureAlgorithm.HS256)
                 .compact();
 

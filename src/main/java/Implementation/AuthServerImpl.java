@@ -6,6 +6,7 @@ import lib.SessionManager;
 
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.List;
 
 public class AuthServerImpl extends UnicastRemoteObject implements AuthServer {
     private SessionManager sManager;
@@ -15,6 +16,26 @@ public class AuthServerImpl extends UnicastRemoteObject implements AuthServer {
         this.sManager = sManager;
     }
 
+
+    public boolean hasPermission(String token,String requiredPermission){
+        Claims claims = sManager.validateAccessToken(token);
+        List<String> permissions = claims.get("permissions", List.class);
+        return permissions != null && permissions.contains(requiredPermission);
+    }
+
+    public boolean hasRole(String token, String requiredRole){
+        Claims claims = sManager.validateAccessToken(token);
+        String role = claims.get("role", String.class);
+        return requiredRole.equals(role);
+    }
+
+    public boolean isAuthorized(String token, String requiredRole, String requiredPermission){
+        return hasRole(token, requiredRole) && hasPermission(token, requiredPermission);
+    }
+
+    public 
+
+    
     @Override
     public AuthenticationResponse login(String username, String password) throws RemoteException {
         PasswordProcessing processing = new PasswordProcessing();
@@ -49,3 +70,10 @@ public class AuthServerImpl extends UnicastRemoteObject implements AuthServer {
         return new AuthenticationResponse(newAccessToken, newRefreshToken);
     }
 }
+
+public class UnauthorizedAccessException extends RuntimeException{
+    public UnauthorizedAccessException(){
+        System.out.println("User not authorized to perform this action");
+    }
+}
+
