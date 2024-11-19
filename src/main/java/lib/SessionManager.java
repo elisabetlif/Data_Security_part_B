@@ -8,11 +8,14 @@ import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+import Implementation.UserRolesandPermissions;
+
 public class SessionManager {
     private Key secretKey;
     private long accessTokenValidity;   
     private long refreshTokenValidity;
     private SecureRandom secureRandom = new SecureRandom();
+    private final UserRolesandPermissions userRolesAndPermissions;
 
     // Store refresh tokens server-side
     private Map<String, RefreshTokenData> refreshTokenStore = new ConcurrentHashMap<>();
@@ -23,6 +26,7 @@ public class SessionManager {
         this.accessTokenValidity = accessTokenValidity;
         this.refreshTokenValidity = refreshTokenValidity;
         this.secretKey = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+        this.userRolesAndPermissions = new UserRolesandPermissions();
     }
 
     /**
@@ -32,11 +36,14 @@ public class SessionManager {
      * @param permissions List of permissions
      * @return Access token (JWT)
      */
-    public String createAccessToken(String username, String role,List<String> permissions ) {
+    public String createAccessToken(String username ) {
         long nowMillis = System.currentTimeMillis();
         Date now = new Date(nowMillis);
         Date expiry = new Date(nowMillis + accessTokenValidity);
         String id = generateSecureID();
+        String role = userRolesAndPermissions.getRole(username);
+        List<String> permissions = userRolesAndPermissions.getPermissions(username);
+
 
         String token = Jwts.builder()
                 .setId(id)

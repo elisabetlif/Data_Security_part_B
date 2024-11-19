@@ -13,6 +13,7 @@ public class PrintServerImpl extends UnicastRemoteObject implements PrintServer 
     private SessionManager sManager;
     private Map<String, LinkedList<String>> printerQueues;
     private Map<String, String> configParameters;
+   
 
     public PrintServerImpl(SessionManager sManager) throws RemoteException {
         super();
@@ -33,6 +34,19 @@ public class PrintServerImpl extends UnicastRemoteObject implements PrintServer 
         }
     }
 
+    public boolean hasPermission(String token,String requiredPermission){
+        Claims claims = sManager.validateAccessToken(token);
+        List<String> permissions = claims.get("permissions", List.class);
+        return permissions != null && permissions.contains(requiredPermission);
+    }
+
+    public boolean hasRole(String token, List<String> requiredRole){
+        Claims claims = sManager.validateAccessToken(token);
+        String role = claims.get("role", String.class);
+        return requiredRole.contains(role);
+    }
+
+   
 
     /**
      * prints file filename on the specified printer
@@ -46,11 +60,20 @@ public class PrintServerImpl extends UnicastRemoteObject implements PrintServer 
         if (!isRunning) {
             throw new RemoteException("Print server is not running.");
         }
-        
+        List<String> allowedRoles = Arrays.asList("User", "Power_user", "Admin");
+        String requiredPermission = "print";
+
+
+        if (!hasRole(token,allowedRoles) || !hasPermission(token, requiredPermission)){
+            throw new SecurityException("Unauthorized: Insufficient role or permission to print.");
+        }    
+
         printerQueues.putIfAbsent(printer, new LinkedList<>());
         printerQueues.get(printer).add(filename);
         System.out.println("Printer prints filename");
         return "User \"" + username + "\" added file \"" + filename + "\" to printer \"" + printer + "\" queue.";
+        
+
         
     }
 
@@ -65,11 +88,18 @@ public class PrintServerImpl extends UnicastRemoteObject implements PrintServer 
 
         List<String> queueList = new ArrayList<>();
         LinkedList<String> queue = printerQueues.get(printer);
+        List<String> allowedRoles = Arrays.asList("User", "Power_user", "Admin");
+        String requiredPermission = "queue";
+
+        if (!hasRole(token,allowedRoles) || !hasPermission(token, requiredPermission)){
+            throw new SecurityException("Unauthorized: Insufficient role or permission to see queue.");
+        }   
         
         if (queue == null || queue.isEmpty()) {
             System.out.println("The print queue for printer \"" + printer + "\" is empty.");
             return queue;
         }
+
 
         int jobNumber = 1;
         for (String filename : queue) {
@@ -91,6 +121,12 @@ public class PrintServerImpl extends UnicastRemoteObject implements PrintServer 
         String username = claims.getSubject();
         
         LinkedList<String> queue = printerQueues.get(printer);
+        List<String> allowedRoles = Arrays.asList( "Power_user", "Admin");
+        String requiredPermission = "topQueue";
+
+        if (!hasRole(token,allowedRoles) || !hasPermission(token, requiredPermission)){
+            throw new SecurityException("Unauthorized: Insufficient role or permission to see topQueue.");
+        } 
         
         if (queue == null || queue.isEmpty()) {
             System.out.println("The print queue for printer \"" + printer + "\" is empty.");
@@ -112,6 +148,12 @@ public class PrintServerImpl extends UnicastRemoteObject implements PrintServer 
     public String start(String token, String refreshToken) throws RemoteException, Exception {
         Claims claims = validateAccessToken(token, refreshToken);
         String username = claims.getSubject();
+        List<String> allowedRoles = Arrays.asList("Admin","Technician");
+        String requiredPermission = "start";
+
+        if (!hasRole(token,allowedRoles) || !hasPermission(token, requiredPermission)){
+            throw new SecurityException("Unauthorized: Insufficient role or permission to start.");
+        } 
         
         if(isRunning){
             throw new RemoteException("Print server is already running.");
@@ -129,6 +171,12 @@ public class PrintServerImpl extends UnicastRemoteObject implements PrintServer 
     public String stop(String token, String refreshToken) throws RemoteException, Exception{
         Claims claims = validateAccessToken(token, refreshToken);
         String username = claims.getSubject();
+        List<String> allowedRoles = Arrays.asList("Admin","Technician");
+        String requiredPermission = "stop";
+
+        if (!hasRole(token,allowedRoles) || !hasPermission(token, requiredPermission)){
+            throw new SecurityException("Unauthorized: Insufficient role or permission to stop.");
+        } 
         
         if(!isRunning){
             throw new RemoteException("Print server is already stop");
@@ -147,6 +195,12 @@ public class PrintServerImpl extends UnicastRemoteObject implements PrintServer 
     public String restart(String token, String refreshToken) throws RemoteException, Exception {
         Claims claims = validateAccessToken(token, refreshToken);
         String username = claims.getSubject();
+        List<String> allowedRoles = Arrays.asList("Admin","Technician","Power_user");
+        String requiredPermission = "stop";
+
+        if (!hasRole(token,allowedRoles) || !hasPermission(token, requiredPermission)){
+            throw new SecurityException("Unauthorized: Insufficient role or permission to restart.");
+        } 
 
         if(!isRunning){
             throw new RemoteException("Print server is not started to be able to restart");
@@ -169,6 +223,12 @@ public class PrintServerImpl extends UnicastRemoteObject implements PrintServer 
         
         LinkedList<String> queue = printerQueues.get(printer);
         String statusMessage;
+        List<String> allowedRoles = Arrays.asList("Admin","Technician");
+        String requiredPermission = "status";
+
+        if (!hasRole(token,allowedRoles) || !hasPermission(token, requiredPermission)){
+            throw new SecurityException("Unauthorized: Insufficient role or permission to see status.");
+        } 
 
         if (queue == null) {
             statusMessage = "Printer \"" + printer + "\" is not available.";
@@ -189,6 +249,12 @@ public class PrintServerImpl extends UnicastRemoteObject implements PrintServer 
     public String readConfig(String token, String refreshToken, String parameter) throws Exception{
         Claims claims = validateAccessToken(token, refreshToken);
         String username = claims.getSubject();
+        List<String> allowedRoles = Arrays.asList("Admin","Technician");
+        String requiredPermission = "readConfig";
+
+        if (!hasRole(token,allowedRoles) || !hasPermission(token, requiredPermission)){
+            throw new SecurityException("Unauthorized: Insufficient role or permission to readConfig.");
+        } 
         
         String value = configParameters.get(parameter);
         if (value == null) {
@@ -208,7 +274,12 @@ public class PrintServerImpl extends UnicastRemoteObject implements PrintServer 
     public String setConfig(String token, String refreshToken, String parameter, String value) throws Exception {
         Claims claims = validateAccessToken(token, refreshToken);
         String username = claims.getSubject();
+        List<String> allowedRoles = Arrays.asList("Admin","Technician");
+        String requiredPermission = "setConfig";
 
+        if (!hasRole(token,allowedRoles) || !hasPermission(token, requiredPermission)){
+            throw new SecurityException("Unauthorized: Insufficient role or permission to setConfig.");
+        } 
         configParameters.put(parameter, value);
         System.out.println("Printer sets value of parameter");
         return "User \"" + username + "\" set configuration parameter \"" + parameter + "\" to " + value;
