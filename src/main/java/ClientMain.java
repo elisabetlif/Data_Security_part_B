@@ -44,6 +44,10 @@ public class ClientMain {
             // View the print queue
             List<String> queue = executeMethod(() -> printServer.queue(accessToken, refreshToken, "Printer1"));
             System.out.println(queue.toString());
+
+            List<String> topQueue = executeMethod(() -> printServer.queue(accessToken, refreshToken, "Printer1"));
+            System.out.println(topQueue.toString());
+
             // Logout from the authentication server
             authServer.logout(refreshToken, accessToken);
 
