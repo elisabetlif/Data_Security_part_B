@@ -11,7 +11,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class UserRolesandPermissions {
-    private static final String JSON_FILE = "C:\\Users\\astri\\Documents\\DTU\\1.ÖNN\\Data Security\\Assignment2\\assignment2_B\\Data_Security_part_B\\src\\main\\java\\resource\\PublicFile.json";
+    private static final String JSON_FILE = "src\\main\\java\\resource\\PublicFile.json";
 
     private static final String FAIL_MESSAGE1 = "Failed to get user role";
 
