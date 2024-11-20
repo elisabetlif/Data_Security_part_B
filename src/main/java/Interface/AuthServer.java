@@ -8,9 +8,9 @@ import lib.AuthenticationResponse;
 public interface AuthServer extends Remote {
     AuthenticationResponse login(String username, String password) throws RemoteException;
 
-    void logout(String refreshToken, String accessToken) throws RemoteException;
+    String logout(String refreshToken, String accessToken) throws RemoteException;
 
-    AuthenticationResponse refreshAccessToken(String refreshToken) throws RemoteException;
+    AuthenticationResponse refreshAccessToken(String refreshToken, String accessToken) throws RemoteException;
 }
 
 

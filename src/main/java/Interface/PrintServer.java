@@ -2,24 +2,23 @@ package Interface;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
-import java.util.List;
 
 public interface PrintServer extends Remote {
-    String print(String token, String refreshToken, String filename, String printer) throws RemoteException, Exception;
+    String print(String token, String filename, String printer) throws RemoteException;
 
-    List<String> queue(String token, String refreshToken, String printer) throws RemoteException, Exception;
+    String queue(String token, String printer) throws RemoteException;
 
-    String topQueue(String token, String refreshToken, String printer, int job) throws RemoteException, Exception;
+    String topQueue(String token, String printer, int job) throws RemoteException;
 
-    String start(String token, String refreshToken) throws RemoteException, Exception;
+    String start(String token) throws RemoteException;
 
-    String stop(String token, String refreshToken) throws RemoteException, Exception;
+    String stop(String token) throws RemoteException;
 
-    String restart(String token, String refreshToken) throws RemoteException, Exception;
+    String restart(String token) throws RemoteException;
 
-    String status(String token, String refreshToken, String printer) throws RemoteException, Exception;
+    String status(String token, String printer) throws RemoteException;
 
-    String readConfig(String token, String refreshToken, String parameter) throws RemoteException, Exception;
+    String readConfig(String token, String parameter) throws RemoteException;
 
-    String setConfig(String token, String refreshToken, String parameter, String value) throws RemoteException, Exception;
+    String setConfig(String token, String parameter, String value) throws RemoteException;
 }

@@ -6,9 +6,6 @@ import lib.SessionManager;
 
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.List;
-import io.jsonwebtoken.Claims; 
-import io.jsonwebtoken.Jwts;    
 
 public class AuthServerImpl extends UnicastRemoteObject implements AuthServer {
     private SessionManager sManager;
@@ -18,41 +15,55 @@ public class AuthServerImpl extends UnicastRemoteObject implements AuthServer {
         this.sManager = sManager;
     }
 
-
-
-
-    
     @Override
-    public AuthenticationResponse login(String username, String password) throws RemoteException {
+    public AuthenticationResponse login(String username, String password) {
         PasswordProcessing processing = new PasswordProcessing();
         if (processing.passwordPros(username, password)) {
-            String accessToken = sManager.createAccessToken(username);
             String refreshToken = sManager.createRefreshToken(username);
-
+            String accessToken = sManager.createAccessToken(username, refreshToken);
+            
+            System.out.println("User: " + username + " is logged in");
             return new AuthenticationResponse(accessToken, refreshToken);
         } else {
-            throw new RemoteException("Authentication failed.");
+            System.err.println("Server: Authentication failed.");
+            return null;
         }
     }
 
     @Override
-    public void logout(String refreshToken, String accessToken) throws RemoteException {
-        sManager.invalidateTokens(refreshToken, accessToken);
+    public String logout(String refreshToken, String username) {
+        String name = sManager.validateRefreshToken(refreshToken) ;
+        if(!name.equals(username)){
+            System.err.println("Server: Unauthorized attempt detected - Refresh token validation failed. User not authorized.");
+            return "User cant be logged out";
+        }
+        sManager.invalidateTokens(refreshToken);
+
+        System.out.println("User: " + username + "is logged out");
+        return "User logged out";
     }
 
     @Override
-    public AuthenticationResponse refreshAccessToken(String refreshToken) throws RemoteException {
-        String username = sManager.validateRefreshToken(refreshToken);
+    public AuthenticationResponse refreshAccessToken(String refreshToken, String accessToken){
+        String username = sManager.extractUsernameFromExpiredToken(accessToken);
+        
         if (username == null) {
-            throw new RemoteException("Invalid or expired refresh token.");
+            System.err.println("Server: Failed to extract username from expired access token.");
+            return null; 
         }
-
-        String newAccessToken = sManager.createAccessToken(username);
-
-        // Optionally, issue a new refresh token (token rotation)
+    
+        String validatedUsername = sManager.validateRefreshToken(refreshToken);
+        if (validatedUsername == null || !validatedUsername.equals(username)) {
+            System.err.println("Server: Invalid refresh token.");
+            return null;
+        }
+    
+        sManager.invalidateTokens(refreshToken);
+    
         String newRefreshToken = sManager.createRefreshToken(username);
-        sManager.invalidateRefreshToken(refreshToken); // Invalidate old refresh token
-
+        String newAccessToken = sManager.createAccessToken(username, newRefreshToken);
+    
+        System.out.println("New refresh token and access token created.");
         return new AuthenticationResponse(newAccessToken, newRefreshToken);
     }
 }
