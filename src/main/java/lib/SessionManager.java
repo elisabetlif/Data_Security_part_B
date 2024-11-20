@@ -3,7 +3,7 @@ package lib;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 
-import java.security.Key;
+import java.security.KeyPair;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import Implementation.UserRolesandPermissions;
 
 public class SessionManager {
-    private Key secretKey;
+    private KeyPair keyPair;
     private long accessTokenValidity;   
     private long refreshTokenValidity;
     private SecureRandom secureRandom = new SecureRandom();
@@ -25,7 +25,7 @@ public class SessionManager {
     public SessionManager(long accessTokenValidity, long refreshTokenValidity) {
         this.accessTokenValidity = accessTokenValidity;
         this.refreshTokenValidity = refreshTokenValidity;
-        this.secretKey = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+        this.keyPair = Keys.keyPairFor(SignatureAlgorithm.RS256);
         this.userRolesAndPermissions = new UserRolesandPermissions();
     }
 
@@ -36,7 +36,7 @@ public class SessionManager {
      * @param permissions List of permissions
      * @return Access token (JWT)
      */
-    public String createAccessToken(String username ) {
+    public String createAccessToken(String username, String refreshToken) {
         long nowMillis = System.currentTimeMillis();
         Date now = new Date(nowMillis);
         Date expiry = new Date(nowMillis + accessTokenValidity);
@@ -52,8 +52,13 @@ public class SessionManager {
                 .setExpiration(expiry)
                 .claim("role", role) 
                 .claim("permissions", permissions)
-                .signWith(secretKey, SignatureAlgorithm.HS256)
+                .signWith(keyPair.getPrivate(), SignatureAlgorithm.RS256)
                 .compact();
+        
+        RefreshTokenData tokenData = refreshTokenStore.get(refreshToken);
+        if (tokenData != null) {
+            tokenData.addAccessTokenId(id);
+        }
 
         return token;
     }
@@ -67,7 +72,6 @@ public class SessionManager {
         String refreshToken = generateSecureID();
         long expiryTime = System.currentTimeMillis() + refreshTokenValidity;
 
-        // Store the refresh token with associated username and expiry time
         refreshTokenStore.put(refreshToken, new RefreshTokenData(username, expiryTime));
 
         return refreshToken;
@@ -80,8 +84,15 @@ public class SessionManager {
      */
     public Claims validateAccessToken(String token) {
         try {
+            if(isTokenExpired(token)){
+                System.err.println("Server: Access token expired");
+                invalidatedAccessTokens.put(token, accessTokenValidity);
+                
+                return null;
+            }
+
             Jws<Claims> claimsJws = Jwts.parserBuilder()
-                    .setSigningKey(secretKey)
+                    .setSigningKey(keyPair.getPublic())
                     .build()
                     .parseClaimsJws(token);
 
@@ -105,9 +116,15 @@ public class SessionManager {
      */
     public String validateRefreshToken(String refreshToken) {
         RefreshTokenData tokenData = refreshTokenStore.get(refreshToken);
-
-        if (tokenData == null || tokenData.isExpired()) {
+        if (tokenData == null) {
             return null;
+        } else if (tokenData.isExpired()){
+            Set<String> accessTokenIds = tokenData.getAccessTokenIds();
+            long expiryTime = tokenData.getExpiryTime();
+
+            for (String accessTokenId : accessTokenIds) {
+                invalidatedAccessTokens.put(accessTokenId, expiryTime);
+            }
         }
 
         return tokenData.getUsername();
@@ -118,33 +135,18 @@ public class SessionManager {
      * @param refreshToken Refresh token to invalidate
      * @param accessToken Access token to invalidate
      */
-    public void invalidateTokens(String refreshToken, String accessToken){
-        invalidateAccessToken(accessToken);
-        invalidateRefreshToken(refreshToken);
-        cleanupExpiredTokens();
-    }
+    public void invalidateTokens(String refreshToken){
+        RefreshTokenData tokenData = refreshTokenStore.remove(refreshToken);
+        if (tokenData != null) {
+            Set<String> accessTokenIds = tokenData.getAccessTokenIds();
+            long expiryTime = tokenData.getExpiryTime();
 
-    /**
-     * Invalidates the refresh token
-     * @param refreshToken Refresh token to invalidate
-     */
-    public void invalidateRefreshToken(String refreshToken) {
-        refreshTokenStore.remove(refreshToken);
-    }
-
-    /**
-     * Invalidates the access token
-     * @param token Refresh token to invalidate
-     */
-    private void invalidateAccessToken(String token) {
-        Claims claims = validateAccessToken(token);
-        if (claims != null) {
-            String tokenId = claims.getId();
-            Date expiration = claims.getExpiration();
-            invalidatedAccessTokens.put(tokenId, expiration.getTime());
+            for (String accessTokenId : accessTokenIds) {
+                invalidatedAccessTokens.put(accessTokenId, expiryTime);
+            }
+            cleanupExpiredTokens();
         }
-    }
-    
+    }    
 
     /**
      * Generates a secure random ID
@@ -163,30 +165,83 @@ public class SessionManager {
         return hexString.toString();
     }
 
+    private boolean isTokenExpired(String token) {
+        try {
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(keyPair.getPublic())
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+    
+            Date expiration = claims.getExpiration();
+            return expiration.before(new Date());
+        } catch (JwtException e) {
+            System.out.println("Invalid token");
+            return true; 
+        }
+    } 
+
+    /**
+     * Extracts username from the expired access token
+     * @param token Expired access token
+     * @return String name otherwise null
+     */
+    public String extractUsernameFromExpiredToken(String token) {
+        try {
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(keyPair.getPublic())
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+            return claims.getSubject();
+        } catch (ExpiredJwtException e) {
+            return e.getClaims().getSubject();
+        } catch (JwtException e) {
+            return null;
+        }
+    }
+
+    /**
+     * Cleans up expired tokens to prevent memory leaks
+     */
     private void cleanupExpiredTokens() {
         long now = System.currentTimeMillis();
         invalidatedAccessTokens.entrySet().removeIf(entry -> entry.getValue() <= now);
         refreshTokenStore.entrySet().removeIf(entry -> entry.getValue().isExpired());
     }
 
-    /**
+   /**
      * Inner class to store refresh token data
      */
     private static class RefreshTokenData {
         private String username;
         private long expiryTime;
-
+        private Set<String> accessTokenIds;
+    
         public RefreshTokenData(String username, long expiryTime) {
             this.username = username;
             this.expiryTime = expiryTime;
+            this.accessTokenIds = ConcurrentHashMap.newKeySet();
         }
-
+    
         public String getUsername() {
             return username;
         }
-
+    
         public boolean isExpired() {
             return System.currentTimeMillis() > expiryTime;
         }
-    }
+    
+        public long getExpiryTime() {
+            return this.expiryTime;
+        }
+    
+        public Set<String> getAccessTokenIds() {
+            return accessTokenIds;
+        }
+    
+        public void addAccessTokenId(String tokenId) {
+            this.accessTokenIds.add(tokenId);
+        }
+    } 
 }

@@ -23,25 +23,24 @@ public class PrintServerImpl extends UnicastRemoteObject implements PrintServer 
         this.configParameters = new HashMap<>();
     }
 
-    private Claims validateAccessToken(String token, String refreshToken) throws RemoteException {
-        System.out.println("Token validation");
+    /**
+     * Validates the access token 
+     * @param token Access token
+     * @return
+     * @throws AuthenticationException
+     */
+    private Claims validateToken(String token) {
+        System.out.println("Check token validation...");
         Claims claims = sManager.validateAccessToken(token);
-        if(sManager.validateRefreshToken(refreshToken) == null || claims == null) {
-            throw new RemoteException("Invalid or expired token.");
-        } else {
-            System.out.println("Tokens valid");
-            return claims;
-        }
+        return claims;
     }
 
-    public boolean hasPermission(String token,String requiredPermission){
-        Claims claims = sManager.validateAccessToken(token);
+    public boolean hasPermission(Claims claims, String requiredPermission){
         List<String> permissions = claims.get("permissions", List.class);
         return permissions != null && permissions.contains(requiredPermission);
     }
 
-    public boolean hasRole(String token, List<String> requiredRole){
-        Claims claims = sManager.validateAccessToken(token);
+    public boolean hasRole(Claims claims, List<String> requiredRole){
         String role = claims.get("role", String.class);
         return requiredRole.contains(role);
     }
@@ -53,91 +52,109 @@ public class PrintServerImpl extends UnicastRemoteObject implements PrintServer 
      * @throws Exception 
      */
     @Override
-    public String print(String token, String refreshToken, String filename, String printer) throws Exception {
-        Claims claims = validateAccessToken(token, refreshToken);
-        String username = claims.getSubject();
-
-        if (!isRunning) {
-            throw new RemoteException("Print server is not running.");
+    public String print(String token, String filename, String printer){
+        if(!isRunning){
+            System.err.println("Server: Printer not running, unable to commit action");
+            return "Printer is not running";
         }
-        List<String> allowedRoles = Arrays.asList("User", "Power_user", "Admin");
+        Claims claims = validateToken(token);
         String requiredPermission = "print";
-
-
-        if (!hasRole(token,allowedRoles) || !hasPermission(token, requiredPermission)){
-            throw new SecurityException("Unauthorized: Insufficient role or permission to print.");
-        }    
-
-        printerQueues.putIfAbsent(printer, new LinkedList<>());
-        printerQueues.get(printer).add(filename);
-        System.out.println("Printer prints filename");
-        return "User \"" + username + "\" added file \"" + filename + "\" to printer \"" + printer + "\" queue.";
         
+        if(claims != null){
+            boolean permission = hasPermission(claims, requiredPermission);
 
-        
+            if(permission){
+                printerQueues.putIfAbsent(printer, new LinkedList<>());
+                printerQueues.get(printer).add(filename);
+                System.out.println("Printing document: " + filename);
+                return "Printer \"" + printer + " prints file \"" + filename;   
+            } else {
+                System.err.println("Unauthorized: Insufficient role or permission to print.");
+                return "Unauthorized: Insufficient role or permission to print.";
+            }
+        } else {
+            System.err.println("Server: Unauthorized print attempt detected - Access token validation failed. User not authorized.");
+            return "User not authorized to do action";
+        }
     }
 
     /**
      * Lists the print queue for a given printer on the user's display
      * in lines of the form !job number ? !filename?
-     * @throws Exception 
      */
     @Override
-    public List<String> queue(String token, String refreshToken, String printer) throws Exception {     
-        Claims claims = validateAccessToken(token, refreshToken);
-
-        List<String> queueList = new ArrayList<>();
-        LinkedList<String> queue = printerQueues.get(printer);
-        List<String> allowedRoles = Arrays.asList("User", "Power_user", "Admin");
+    public String queue(String token, String printer){     
+        if(!isRunning){
+            return "Printer is not running";
+        }
+        Claims claims = validateToken(token);
         String requiredPermission = "queue";
 
-        if (!hasRole(token,allowedRoles) || !hasPermission(token, requiredPermission)){
-            throw new SecurityException("Unauthorized: Insufficient role or permission to see queue.");
-        }   
-        
-        if (queue == null || queue.isEmpty()) {
-            System.out.println("The print queue for printer \"" + printer + "\" is empty.");
-            return queue;
-        }
+        if (claims != null) {
+            boolean permission = hasPermission(claims, requiredPermission);
 
+            if(permission){
+                List<String> queueList = new ArrayList<>();
+                LinkedList<String> queue = printerQueues.get(printer);
+                
+                if (queue == null || queue.isEmpty()) {
+                    return "The print queue for printer \"" + printer + "\" is empty.";
+                }
+    
+                int jobNumber = 1;
+                for (String filename : queue) {
+                    queueList.add(jobNumber + " " + filename);
+                    jobNumber++;
+                }
+                
+                System.out.println("Pritner gives current queue");
+                return "Printers current queue: " + queue.toString();
+            } else {
+                System.err.println("Unauthorized: Insufficient role or permission to see queue.");
+                return "Unauthorized: Insufficient role or permission to see queue.";
+            }           
 
-        int jobNumber = 1;
-        for (String filename : queue) {
-            queueList.add(jobNumber + " " + filename);
-            jobNumber++;
+        } else {
+            System.err.println("Server: Unauthorized print attempt detected - Access token validation failed. User not authorized.");
+            return "User not authorized to do action";
         }
-        
-        System.out.println("Pritner prints current queue");
-        return queue;
     }
 
     /**
      * moves job to the top of the queue
-     * @throws Exception 
      */
     @Override
-    public String topQueue(String token, String refreshToken, String printer, int job) throws RemoteException, Exception {
-        Claims claims = validateAccessToken(token, refreshToken);
-        String username = claims.getSubject();
-        
-        LinkedList<String> queue = printerQueues.get(printer);
-        List<String> allowedRoles = Arrays.asList( "Power_user", "Admin");
+    public String topQueue(String token, String printer, int job){
+        if(!isRunning){
+            return "Printer is not running";
+        }
+        Claims claims = validateToken(token);
         String requiredPermission = "topQueue";
 
-        if (!hasRole(token,allowedRoles) || !hasPermission(token, requiredPermission)){
-            throw new SecurityException("Unauthorized: Insufficient role or permission to see topQueue.");
-        } 
-        
-        if (queue == null || queue.isEmpty()) {
-            System.out.println("The print queue for printer \"" + printer + "\" is empty.");
+        if (claims != null) {
+            boolean permission = hasPermission(claims, requiredPermission);
+
+            if(permission){
+                LinkedList<String> queue = printerQueues.get(printer);
+
+                if (queue == null || queue.isEmpty()) {
+                    return "The print queue for printer \"" + printer + "\" is empty.";
+                }
+    
+                String getJob = queue.get(job);
+                queue.remove(job);
+                queue.addFirst(getJob);
+    
+                System.out.println("Printer moves job to the top of the queue");
+                return "Job \"" + job + "\" has been moved to of printer \"" + printer + "\" queue.";
+            } else {
+                System.err.println("Unauthorized: Insufficient role or permission to top queue.");
+                return "Unauthorized: Insufficient role or permission to change the queue.";
+            }  
+        } else {
+            System.err.println("Server: Unauthorized print attempt detected - Access token validation failed. User not authorized.");
+            return "User not authorized to do action";
         }
-
-        String getJob = queue.get(job);
-        queue.remove(job);
-        queue.addFirst(getJob);
-
-        System.out.println("Printer moves job to the top of the queue");
-        return "User \"" + username + "\" moved job " + job + " to top of printer \"" + printer + "\" queue.";
     }
 
     /**
@@ -145,46 +162,56 @@ public class PrintServerImpl extends UnicastRemoteObject implements PrintServer 
      * @throws RemoteException 
      */
     @Override
-    public String start(String token, String refreshToken) throws RemoteException, Exception {
-        Claims claims = validateAccessToken(token, refreshToken);
-        String username = claims.getSubject();
-        List<String> allowedRoles = Arrays.asList("Admin","Technician");
+    public String start(String token) {
+        if(isRunning){
+            return "Printer is already running";
+        }
+        Claims claims = validateToken(token);
         String requiredPermission = "start";
 
-        if (!hasRole(token,allowedRoles) || !hasPermission(token, requiredPermission)){
-            throw new SecurityException("Unauthorized: Insufficient role or permission to start.");
-        } 
-        
-        if(isRunning){
-            throw new RemoteException("Print server is already running.");
-        }
+        if (claims != null) {
+            boolean permission = hasPermission(claims, requiredPermission);
 
-        isRunning = true;
-        System.out.println("Printer started");
-        return "User \"" + username + "\" started the printer.";
+            if(permission){
+                isRunning = true;
+                System.out.println("Printer has been started");
+                return "Print has been started.";
+            } else {
+                System.err.println("Unauthorized: Insufficient role or permission to see start.");
+                return "Unauthorized: Insufficient role or permission to see start.";
+            } 
+        } else {
+            System.err.println("Server: Unauthorized print attempt detected - Access token validation failed. User not authorized.");
+            return "User not authorized to do action";
+        }
     }
 
     /**
      * stops the print server
      */
     @Override
-    public String stop(String token, String refreshToken) throws RemoteException, Exception{
-        Claims claims = validateAccessToken(token, refreshToken);
-        String username = claims.getSubject();
-        List<String> allowedRoles = Arrays.asList("Admin","Technician");
+    public String stop(String token){
+        if(!isRunning){
+            return "Printer is already stopped";
+        }
+        Claims claims = validateToken(token);
         String requiredPermission = "stop";
 
-        if (!hasRole(token,allowedRoles) || !hasPermission(token, requiredPermission)){
-            throw new SecurityException("Unauthorized: Insufficient role or permission to stop.");
-        } 
-        
-        if(!isRunning){
-            throw new RemoteException("Print server is already stop");
-        }
+        if (claims != null) {
+            boolean permission = hasPermission(claims, requiredPermission);
 
-        isRunning = false;
-        System.out.println("Printer stopped");
-        return "User \"" + username + "\" stopped the printer.";
+            if(permission){
+                isRunning = false;
+                System.out.println("Printer has been stopped");
+                return "Print has been stopped.";    
+            } else {
+                System.err.println("Unauthorized: Insufficient role or permission to stop.");
+                return "Unauthorized: Insufficient role or permission to stop";
+            }    
+        } else {
+            System.err.println("Server: Unauthorized print attempt detected - Access token validation failed. User not authorized.");
+            return "User not authorized to do action";
+        }
     }
 
     /**
@@ -192,96 +219,132 @@ public class PrintServerImpl extends UnicastRemoteObject implements PrintServer 
      * @throws RemoteException 
      */
     @Override
-    public String restart(String token, String refreshToken) throws RemoteException, Exception {
-        Claims claims = validateAccessToken(token, refreshToken);
-        String username = claims.getSubject();
-        List<String> allowedRoles = Arrays.asList("Admin","Technician","Power_user");
-        String requiredPermission = "stop";
-
-        if (!hasRole(token,allowedRoles) || !hasPermission(token, requiredPermission)){
-            throw new SecurityException("Unauthorized: Insufficient role or permission to restart.");
-        } 
-
-        if(!isRunning){
-            throw new RemoteException("Print server is not started to be able to restart");
+    public String restart(String token){
+        if(isRunning){
+            return "Print has not been started to be able to restart";
         }
-        
-        this.printerQueues.clear();
-        isRunning = true;
+        Claims claims = validateToken(token);
+        String requiredPermission = "restart";
 
-        System.out.println("Printer restarted");
-        return "User \"" + username + "\" restarted the printer.";
+        if (claims != null) {
+            boolean permission = hasPermission(claims, requiredPermission);
+
+            if(permission){
+                stop(token);
+
+                this.printerQueues.clear();
+                System.out.println("Printer clears queue");
+    
+                start(token);
+                System.out.println("Printer has been restarted");
+                return "Print has been restarted."; 
+            } else {
+                System.err.println("Unauthorized: Insufficient role or permission to restart.");
+                return "Unauthorized: Insufficient role or permission to restart.";
+            } 
+        } else {
+            System.err.println("Server: Unauthorized print attempt detected - Access token validation failed. User not authorized.");
+            return "User not authorized to do action";
+        }
     }
 
     /**
      * prints status of printer on the user's display
      */
     @Override
-    public String status(String token, String refreshToken, String printer) throws Exception {
-        Claims claims = validateAccessToken(token, refreshToken);
-        String username = claims.getSubject();
-        
-        LinkedList<String> queue = printerQueues.get(printer);
-        String statusMessage;
-        List<String> allowedRoles = Arrays.asList("Admin","Technician");
+    public String status(String token, String printer){
+        if(!isRunning){
+            return "Printer is not running";
+        }
+        Claims claims = validateToken(token);
         String requiredPermission = "status";
 
-        if (!hasRole(token,allowedRoles) || !hasPermission(token, requiredPermission)){
-            throw new SecurityException("Unauthorized: Insufficient role or permission to see status.");
-        } 
+        if (claims != null) {
+            boolean permission = hasPermission(claims, requiredPermission);
 
-        if (queue == null) {
-            statusMessage = "Printer \"" + printer + "\" is not available.";
-        } else if (queue.isEmpty()) {
-            statusMessage = "Printer \"" + printer + "\" is available and has no jobs in the queue.";
+            if(permission){
+                LinkedList<String> queue = printerQueues.get(printer);
+                String statusMessage;
+        
+                if (queue == null) {
+                    statusMessage = "Printer \"" + printer + "\" is not available.";
+                } else if (queue.isEmpty()) {
+                    statusMessage = "Printer \"" + printer + "\" is available and has no jobs in the queue.";
+                } else {
+                    statusMessage = "Printer \"" + printer + "\" is available with " + queue.size() + " job(s) in the queue.";
+                }
+        
+                System.out.println("Printer prints status");
+                return statusMessage;  
+            } else {
+                System.err.println("Unauthorized: Insufficient role or permission to see status.");
+                return "Unauthorized: Insufficient role or permission to see status.";
+            } 
         } else {
-            statusMessage = "Printer \"" + printer + "\" is available with " + queue.size() + " job(s) in the queue.";
+            System.err.println("Server: Unauthorized print attempt detected - Access token validation failed. User not authorized.");
+            return "User not authorized to do action";
         }
-
-        System.out.println("Printer prints status");
-        return statusMessage;
     }
 
     /**
      * prints the value of the parameter on the print server to the user's display
      */
     @Override
-    public String readConfig(String token, String refreshToken, String parameter) throws Exception{
-        Claims claims = validateAccessToken(token, refreshToken);
-        String username = claims.getSubject();
-        List<String> allowedRoles = Arrays.asList("Admin","Technician");
+    public String readConfig(String token, String parameter){
+        if(!isRunning){
+            return "Printer is not running";
+        }
+        Claims claims = validateToken(token);
         String requiredPermission = "readConfig";
 
-        if (!hasRole(token,allowedRoles) || !hasPermission(token, requiredPermission)){
-            throw new SecurityException("Unauthorized: Insufficient role or permission to readConfig.");
-        } 
-        
-        String value = configParameters.get(parameter);
-        if (value == null) {
-            value = "Configuration parameter \"" + parameter + "\" is not set.";
-        } else {
-            value = "Configuration parameter \"" + parameter + "\": " + value;
-        }
+        if (claims != null) {
+            boolean permission = hasPermission(claims, requiredPermission);
 
-        System.out.println("Printer reads value of parameter");
-        return value;
+            if(permission){
+                String value = configParameters.get(parameter);
+                if (value == null) {
+                    value = "Configuration parameter \"" + parameter + "\" is not set.";
+                } else {
+                    value = "Configuration parameter \"" + parameter + "\": " + value;
+                }
+        
+                System.out.println("Printer reads value of parameter");
+                return value; 
+            } else {
+                System.err.println("Unauthorized: Insufficient role or permission to readConfig.");
+                return "Unauthorized: Insufficient role or permission to readConfig.";
+            } 
+        } else {
+            System.err.println("Server: Unauthorized print attempt detected - Access token validation failed. User not authorized.");
+            return "User not authorized to do action";
+        }
     }
 
     /**
      * sets the parameter on the print server to value
      */
     @Override
-    public String setConfig(String token, String refreshToken, String parameter, String value) throws Exception {
-        Claims claims = validateAccessToken(token, refreshToken);
-        String username = claims.getSubject();
-        List<String> allowedRoles = Arrays.asList("Admin","Technician");
+    public String setConfig(String token, String parameter, String value){
+        if(!isRunning){
+            return "Printer is not running";
+        }
+        Claims claims = validateToken(token);
         String requiredPermission = "setConfig";
 
-        if (!hasRole(token,allowedRoles) || !hasPermission(token, requiredPermission)){
-            throw new SecurityException("Unauthorized: Insufficient role or permission to setConfig.");
-        } 
-        configParameters.put(parameter, value);
-        System.out.println("Printer sets value of parameter");
-        return "User \"" + username + "\" set configuration parameter \"" + parameter + "\" to " + value;
+        if (claims != null) {
+            boolean permission = hasPermission(claims, requiredPermission);
+
+            if(permission){
+                configParameters.put(parameter, value);
+                System.out.println("Printer sets value of parameter");
+                return "Sets configuration parameter \"" + parameter + "\" to " + value; 
+            } else {
+                System.err.println("Unauthorized: Insufficient role or permission to setConfig.");
+                return "Unauthorized: Insufficient role or permission to setConfig.";
+            }
+        } else {
+            System.err.println("Server: Unauthorized print attempt detected - Access token validation failed. User not authorized.");
+            return "User not authorized to do action";
+        }
     }
 }
