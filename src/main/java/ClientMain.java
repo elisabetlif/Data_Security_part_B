@@ -35,6 +35,15 @@ public class ClientMain {
         System.out.println(printServer.print(accessToken, "file.txt", "Printer2"));
 
         System.out.println(printServer.stop(accessToken));
+
+        addDelay();
+
+        System.out.println(printServer.print(accessToken, "file2.txt", "Printer2"));
+        System.out.println("User refreshes to be able to do action");
+
+        refreshAccessToken();
+
+        System.out.println(printServer.print(accessToken, "file2.txt", "Printer2"));
         
         synchronized (ServerMain.class) {
             try {
@@ -59,9 +68,9 @@ public class ClientMain {
     private static void logInUser(String user, String password) throws RemoteException {
         AuthenticationResponse authResponse = authServer.login(user, password);
         if(authResponse == null){
-            System.out.println("Not able to log in");
+            System.out.println("User: " + user + " is able to log in");
         } else {
-            System.out.println("User logged in");
+            System.out.println("User: "+ user + " is logged in");
         }
         accessToken = authResponse.getAccessToken();
         refreshToken = authResponse.getRefreshToken();
@@ -82,7 +91,7 @@ public class ClientMain {
 
     private static void addDelay() {
         try {
-            Thread.sleep(30000); // 30 seconds
+            Thread.sleep(60000); // 60 seconds
         } catch (InterruptedException e) {
             System.err.println("Sleep interrupted: " + e.getMessage());
         }

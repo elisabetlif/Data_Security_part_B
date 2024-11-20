@@ -15,7 +15,7 @@ public class ServerMain {
             // Start the RMI registry programmatically on port 1099
             Registry registry = LocateRegistry.createRegistry(1099);
             
-            final long idleTimeout = 5 * 60 * 1000; // 5 minutes
+            final long idleTimeout = 60 * 1000; // 1 minutes
             final long absoluteTimeout = 5 * 60 * 60 * 1000; // 5 hours
             SessionManager sManager = new SessionManager(idleTimeout, absoluteTimeout);
 
