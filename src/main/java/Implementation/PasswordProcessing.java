@@ -42,10 +42,12 @@ public class PasswordProcessing {
     }
 
     //    PasswordVer("Alice", "Fall2019");
-    //    PasswordVer("Bob", "ILoveManchesterUnited");
+    //    PasswordVer("GeorgeT", "ILoveManchesterUnited");
     //    PasswordVer("Cecilia", "AfterAllThisTime?");
     //    PasswordVer("David", "Boston1978");
     //    PasswordVer("Erica", "IHatePatricia");
     //    PasswordVer("Fred", "DefinitelyNotGeorge");
     //    PasswordVer("George", "DefinitelyNotFred");
+    //    PasswordVer("Henry", "Tequilaismylove")
+    //    PasswordVer("Ida", "youaresayingitwrong")
 }

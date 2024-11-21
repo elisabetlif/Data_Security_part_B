@@ -7,7 +7,7 @@
     "permissions" : ["topQueue","print","queue","start", "stop", "restart", "status", "readConfig","setConfig"]
 },
 {
-    "user_id": "Bob",
+    "user_id": "GeorgeT",
     "hash": "$argon2i$v=19$m=65536,t=2,p=1$QHOBA7BpWv7Bn22asQD5XQ$lzLtCAi9PEqXHrHulCeSelslARRXucylUsLCY8EhE2g",
     "role": "Technician",
     "permissions" : ["start", "stop", "restart", "status", "readConfig","setConfig"]
@@ -15,6 +15,11 @@
 {
     "user_id": "Cecilia",
     "hash": "$argon2i$v=19$m=65536,t=2,p=1$aj9W9zLwZw20S7P0Zelu0g$zXzlrXpPerv2maBy5gDDHERFtTGsKtEGXfHFJB73gHE",
+    "role": "Power_user",
+    "permissions" : ["topQueue","print","queue", "restart"]
+},
+{   "user_id": "Ida",
+    "hash": "$argon2i$v=19$m=65536,t=2,p=1$Kdmia94KV0xJ957k1G/JDQ$/oDRwAuh8cvg7GzfESPrdi7I89sy/YsSX2RD8V8EZ+o",
     "role": "Power_user",
     "permissions" : ["topQueue","print","queue", "restart"]
 },
@@ -39,6 +44,12 @@
 {
     "user_id": "George",
     "hash": "$argon2i$v=19$m=65536,t=2,p=1$eL3TYfx8SANBzrR3XOZ8TA$ohfQERnJl6Pf74+Ybfm3CkedTK+mz3MeJZbSeW2UOUo",
+    "role": "User",
+    "permissions" : ["print","queue"]
+},
+{
+    "user_id": "Henry",
+    "hash": "$argon2i$v=19$m=65536,t=2,p=1$GiuZXCB5o/U+iVIH1eCmOA$ADaTZ1mLrx5H19ss5SAF03ZcxP8pwp3vHkjeH2YSzwQ",
     "role": "User",
     "permissions" : ["print","queue"]
 }
