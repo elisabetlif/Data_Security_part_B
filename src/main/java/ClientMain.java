@@ -39,7 +39,7 @@ public class ClientMain {
         System.out.println(username + ": " + authServer.logout(refreshToken, username));
 
 
-        logInUser("Bob", "ILoveManchesterUnited");
+        logInUser("GeorgeT", "ILoveManchesterUnited");
 
         System.out.println(username + ": " + printServer.setConfig(accessToken, "Paper", "A4"));
 
