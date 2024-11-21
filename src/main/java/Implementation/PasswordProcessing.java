@@ -9,7 +9,7 @@ import java.io.IOException;
 
 public class PasswordProcessing {
 
-    private static final String JSON_FILE = "src\\main\\java\\resource\\PublicFile.json";
+    private static final String JSON_FILE = "/Users/elisabetbirgisdottir/Documents/GitHub/Data_Security_part_B/src/main/java/resource/PublicFile.json";
 
     public boolean passwordPros(String username, String password){
         try{
