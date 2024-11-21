@@ -30,7 +30,6 @@ public class PrintServerImpl extends UnicastRemoteObject implements PrintServer 
      * @throws AuthenticationException
      */
     private Claims validateToken(String token) {
-        System.out.println("Check token validation...");
         Claims claims = sManager.validateAccessToken(token);
         return claims;
     }
@@ -64,17 +63,15 @@ public class PrintServerImpl extends UnicastRemoteObject implements PrintServer 
             boolean permission = hasPermission(claims, requiredPermission);
 
             if(permission){
-                printerQueues.putIfAbsent(printer, new LinkedList<>());
-                printerQueues.get(printer).add(filename);
-                System.out.println("Printing document: " + filename);
-                return "Printer \"" + printer + " prints file \"" + filename;   
+                System.out.println("Server: Printing document: " + filename);
+                return "print";   
             } else {
-                System.err.println("Unauthorized: Insufficient role or permission to print.");
-                return "Unauthorized: Insufficient role or permission to print.";
+                System.err.println("Server: Unauthorized, insufficient role or permission to print");
+                return "Unauthorized: Insufficient role or permission to print";
             }
         } else {
-            System.err.println("Server: Unauthorized print attempt detected - Access token validation failed. User not authorized.");
-            return "User not authorized to do action";
+            System.err.println("Server: Unauthorized - Access token validation failed. User not authorized.");
+            return "User not is not authenticated";
         }
     }
 
@@ -85,6 +82,7 @@ public class PrintServerImpl extends UnicastRemoteObject implements PrintServer 
     @Override
     public String queue(String token, String printer){     
         if(!isRunning){
+            System.err.println("Server: Printer not running, unable to commit action");
             return "Printer is not running";
         }
         Claims claims = validateToken(token);
@@ -93,30 +91,17 @@ public class PrintServerImpl extends UnicastRemoteObject implements PrintServer 
         if (claims != null) {
             boolean permission = hasPermission(claims, requiredPermission);
 
-            if(permission){
-                List<String> queueList = new ArrayList<>();
-                LinkedList<String> queue = printerQueues.get(printer);
-                
-                if (queue == null || queue.isEmpty()) {
-                    return "The print queue for printer \"" + printer + "\" is empty.";
-                }
-    
-                int jobNumber = 1;
-                for (String filename : queue) {
-                    queueList.add(jobNumber + " " + filename);
-                    jobNumber++;
-                }
-                
+            if(permission){                
                 System.out.println("Pritner gives current queue");
-                return "Printers current queue: " + queue.toString();
+                return "queue";
             } else {
-                System.err.println("Unauthorized: Insufficient role or permission to see queue.");
-                return "Unauthorized: Insufficient role or permission to see queue.";
+                System.err.println("Server: Unauthorized, insufficient role or permission to queue");
+                return "Unauthorized: Insufficient role or permission to queue";
             }           
 
         } else {
-            System.err.println("Server: Unauthorized print attempt detected - Access token validation failed. User not authorized.");
-            return "User not authorized to do action";
+            System.err.println("Server: Unauthorized - Access token validation failed. User not authorized.");
+            return "User not is not authenticated";
         }
     }
 
@@ -126,6 +111,7 @@ public class PrintServerImpl extends UnicastRemoteObject implements PrintServer 
     @Override
     public String topQueue(String token, String printer, int job){
         if(!isRunning){
+            System.err.println("Server: Printer not running, unable to commit action");
             return "Printer is not running";
         }
         Claims claims = validateToken(token);
@@ -134,26 +120,16 @@ public class PrintServerImpl extends UnicastRemoteObject implements PrintServer 
         if (claims != null) {
             boolean permission = hasPermission(claims, requiredPermission);
 
-            if(permission){
-                LinkedList<String> queue = printerQueues.get(printer);
-
-                if (queue == null || queue.isEmpty()) {
-                    return "The print queue for printer \"" + printer + "\" is empty.";
-                }
-    
-                String getJob = queue.get(job);
-                queue.remove(job);
-                queue.addFirst(getJob);
-    
+            if(permission){    
                 System.out.println("Printer moves job to the top of the queue");
-                return "Job \"" + job + "\" has been moved to of printer \"" + printer + "\" queue.";
+                return "topqueue";
             } else {
-                System.err.println("Unauthorized: Insufficient role or permission to top queue.");
-                return "Unauthorized: Insufficient role or permission to change the queue.";
+                System.err.println("Server: Unauthorized, insufficient role or permission to topqueue");
+                return "Unauthorized: Insufficient role or permission to topqueue";
             }  
         } else {
-            System.err.println("Server: Unauthorized print attempt detected - Access token validation failed. User not authorized.");
-            return "User not authorized to do action";
+            System.err.println("Server: Unauthorized - Access token validation failed. User not authorized.");
+            return "User not is not authenticated";
         }
     }
 
@@ -164,6 +140,7 @@ public class PrintServerImpl extends UnicastRemoteObject implements PrintServer 
     @Override
     public String start(String token) {
         if(isRunning){
+            System.err.println("Server: Printer is alreadt running, unable to commit action");
             return "Printer is already running";
         }
         Claims claims = validateToken(token);
@@ -175,14 +152,14 @@ public class PrintServerImpl extends UnicastRemoteObject implements PrintServer 
             if(permission){
                 isRunning = true;
                 System.out.println("Printer has been started");
-                return "Print has been started.";
+                return "start";
             } else {
-                System.err.println("Unauthorized: Insufficient role or permission to see start.");
-                return "Unauthorized: Insufficient role or permission to see start.";
+                System.err.println("Server: Unauthorized, insufficient role or permission to start");
+                return "Unauthorized: Insufficient role or permission to start";
             } 
         } else {
-            System.err.println("Server: Unauthorized print attempt detected - Access token validation failed. User not authorized.");
-            return "User not authorized to do action";
+            System.err.println("Server: Unauthorized - Access token validation failed. User not authorized.");
+            return "User not is not authenticated";
         }
     }
 
@@ -192,6 +169,7 @@ public class PrintServerImpl extends UnicastRemoteObject implements PrintServer 
     @Override
     public String stop(String token){
         if(!isRunning){
+            System.err.println("Server: Printer is already not running, unable to commit action");
             return "Printer is already stopped";
         }
         Claims claims = validateToken(token);
@@ -203,14 +181,14 @@ public class PrintServerImpl extends UnicastRemoteObject implements PrintServer 
             if(permission){
                 isRunning = false;
                 System.out.println("Printer has been stopped");
-                return "Print has been stopped.";    
+                return "stop";    
             } else {
-                System.err.println("Unauthorized: Insufficient role or permission to stop.");
+                System.err.println("Server: Unauthorized, insufficient role or permission to stop.");
                 return "Unauthorized: Insufficient role or permission to stop";
             }    
         } else {
-            System.err.println("Server: Unauthorized print attempt detected - Access token validation failed. User not authorized.");
-            return "User not authorized to do action";
+            System.err.println("Server: Unauthorized - Access token validation failed. User not authorized.");
+            return "User not is not authenticated";
         }
     }
 
@@ -221,6 +199,7 @@ public class PrintServerImpl extends UnicastRemoteObject implements PrintServer 
     @Override
     public String restart(String token){
         if(isRunning){
+            System.err.println("Server: Printer not running, unable to commit action");
             return "Print has not been started to be able to restart";
         }
         Claims claims = validateToken(token);
@@ -230,21 +209,15 @@ public class PrintServerImpl extends UnicastRemoteObject implements PrintServer 
             boolean permission = hasPermission(claims, requiredPermission);
 
             if(permission){
-                stop(token);
-
-                this.printerQueues.clear();
-                System.out.println("Printer clears queue");
-    
-                start(token);
                 System.out.println("Printer has been restarted");
-                return "Print has been restarted."; 
+                return "restart"; 
             } else {
-                System.err.println("Unauthorized: Insufficient role or permission to restart.");
+                System.err.println("Server: Unauthorized, insufficient role or permission to restart.");
                 return "Unauthorized: Insufficient role or permission to restart.";
             } 
         } else {
-            System.err.println("Server: Unauthorized print attempt detected - Access token validation failed. User not authorized.");
-            return "User not authorized to do action";
+            System.err.println("Server: Unauthorized - Access token validation failed. User not authorized.");
+            return "User not is not authenticated";
         }
     }
 
@@ -254,6 +227,7 @@ public class PrintServerImpl extends UnicastRemoteObject implements PrintServer 
     @Override
     public String status(String token, String printer){
         if(!isRunning){
+            System.err.println("Server: Printer not running, unable to commit action");
             return "Printer is not running";
         }
         Claims claims = validateToken(token);
@@ -263,26 +237,15 @@ public class PrintServerImpl extends UnicastRemoteObject implements PrintServer 
             boolean permission = hasPermission(claims, requiredPermission);
 
             if(permission){
-                LinkedList<String> queue = printerQueues.get(printer);
-                String statusMessage;
-        
-                if (queue == null) {
-                    statusMessage = "Printer \"" + printer + "\" is not available.";
-                } else if (queue.isEmpty()) {
-                    statusMessage = "Printer \"" + printer + "\" is available and has no jobs in the queue.";
-                } else {
-                    statusMessage = "Printer \"" + printer + "\" is available with " + queue.size() + " job(s) in the queue.";
-                }
-        
                 System.out.println("Printer prints status");
-                return statusMessage;  
+                return "status";  
             } else {
-                System.err.println("Unauthorized: Insufficient role or permission to see status.");
-                return "Unauthorized: Insufficient role or permission to see status.";
+                System.err.println("Server: Unauthorized, insufficient role or permission to status");
+                return "Unauthorized: Insufficient role or permission to status";
             } 
         } else {
-            System.err.println("Server: Unauthorized print attempt detected - Access token validation failed. User not authorized.");
-            return "User not authorized to do action";
+            System.err.println("Server: Unauthorized - Access token validation failed. User not authorized.");
+            return "User not is not authenticated";
         }
     }
 
@@ -292,6 +255,7 @@ public class PrintServerImpl extends UnicastRemoteObject implements PrintServer 
     @Override
     public String readConfig(String token, String parameter){
         if(!isRunning){
+            System.err.println("Server: Printer not running, unable to commit action");
             return "Printer is not running";
         }
         Claims claims = validateToken(token);
@@ -301,22 +265,15 @@ public class PrintServerImpl extends UnicastRemoteObject implements PrintServer 
             boolean permission = hasPermission(claims, requiredPermission);
 
             if(permission){
-                String value = configParameters.get(parameter);
-                if (value == null) {
-                    value = "Configuration parameter \"" + parameter + "\" is not set.";
-                } else {
-                    value = "Configuration parameter \"" + parameter + "\": " + value;
-                }
-        
                 System.out.println("Printer reads value of parameter");
-                return value; 
+                return "readConfig"; 
             } else {
-                System.err.println("Unauthorized: Insufficient role or permission to readConfig.");
-                return "Unauthorized: Insufficient role or permission to readConfig.";
+                System.err.println("Server: Unauthorized, insufficient role or permission to readConfig");
+                return "Unauthorized: Insufficient role or permission to readConfig";
             } 
         } else {
-            System.err.println("Server: Unauthorized print attempt detected - Access token validation failed. User not authorized.");
-            return "User not authorized to do action";
+            System.err.println("Server: Unauthorized - Access token validation failed. User not authorized.");
+            return "User not is not authenticated";
         }
     }
 
@@ -326,6 +283,7 @@ public class PrintServerImpl extends UnicastRemoteObject implements PrintServer 
     @Override
     public String setConfig(String token, String parameter, String value){
         if(!isRunning){
+            System.err.println("Server: Printer not running, unable to commit action");
             return "Printer is not running";
         }
         Claims claims = validateToken(token);
@@ -335,16 +293,15 @@ public class PrintServerImpl extends UnicastRemoteObject implements PrintServer 
             boolean permission = hasPermission(claims, requiredPermission);
 
             if(permission){
-                configParameters.put(parameter, value);
                 System.out.println("Printer sets value of parameter");
-                return "Sets configuration parameter \"" + parameter + "\" to " + value; 
+                return "setConfig"; 
             } else {
-                System.err.println("Unauthorized: Insufficient role or permission to setConfig.");
-                return "Unauthorized: Insufficient role or permission to setConfig.";
+                System.err.println("Server: Unauthorized, insufficient role or permission to setConfig");
+                return "Unauthorized: Insufficient role or permission to setConfig";
             }
         } else {
-            System.err.println("Server: Unauthorized print attempt detected - Access token validation failed. User not authorized.");
-            return "User not authorized to do action";
+            System.err.println("Server: Unauthorized - Access token validation failed. User not authorized.");
+            return "User not is not authenticated";
         }
     }
 }

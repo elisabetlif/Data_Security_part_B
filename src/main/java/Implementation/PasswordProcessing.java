@@ -12,7 +12,6 @@ public class PasswordProcessing {
     private static final String JSON_FILE = "src\\main\\java\\resource\\PublicFile.json";
 
     public boolean passwordPros(String username, String password){
-        System.out.println(username + " ... " + password);
         try{
             //parsing the PublicFile.json
             ObjectMapper mapper = new ObjectMapper();
