@@ -58,6 +58,7 @@ public class ClientMain {
         addDelay();
 
         System.out.println(printServer.setConfig(accessToken, "Paper", "A5"));
+        
         System.out.println("--------------------------------------------------");
         System.out.println(username + ": user refreshes for new access token");
         System.out.println("-----------------------------------------------------");

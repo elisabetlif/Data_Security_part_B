@@ -44,7 +44,9 @@ public class UserRolesandPermissions {
 
     /**
      * Retrieves the permissions of a specified user
-     * @param username The username of the user whose permissions are to be retrieved
+     * 
+     * @param username The username of the user whose permissions are to be
+     *                 retrieved
      * @return The user's role as a String, or a faliure message
      */
     public List<String> getPermissions(String username) {
@@ -71,5 +73,4 @@ public class UserRolesandPermissions {
         }
         return FAIL_MESSAGE2;
     }
-
 }
