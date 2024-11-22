@@ -2,6 +2,9 @@ package Implementation;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.*;
+import java.util.logging.FileHandler;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
 import Interface.PrintServer;
 import io.jsonwebtoken.Claims;
@@ -9,26 +12,39 @@ import lib.SessionManager;
 
 
 public class PrintServerImpl extends UnicastRemoteObject implements PrintServer {
+    private static final Logger LOGGER = Logger.getLogger(PrintServerImpl.class.getName());
     private Boolean isRunning;
     private SessionManager sManager;
-    private Map<String, LinkedList<String>> printerQueues;
-    private Map<String, String> configParameters;
-   
 
+    static {
+        try {
+            FileHandler fileHandler = new FileHandler("print_server.log", true);
+            fileHandler.setFormatter(new SimpleFormatter());
+            LOGGER.addHandler(fileHandler);
+            LOGGER.setUseParentHandlers(false); // Disable logging to console
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+   
+    /**
+    * Constructor for PrintServerImpl.
+    * 
+    * @param sManager the SessionManager instance for handling authentication tokens
+    * @throws RemoteException if a remote communication error occurs
+    */
     public PrintServerImpl(SessionManager sManager) throws RemoteException {
         super();
         isRunning = false;
         this.sManager = sManager;
-        this.printerQueues = new HashMap<>();
-        this.configParameters = new HashMap<>();
     }
 
     /**
-     * Validates the access token 
-     * @param token Access token
-     * @return
-     * @throws AuthenticationException
-     */
+    * Validates the access token.
+    * 
+    * @param token the access token to be validated
+    * @return the Claims object extracted from the token
+    */
     private Claims validateToken(String token) {
         Claims claims = sManager.validateAccessToken(token);
         return claims;
@@ -39,269 +55,294 @@ public class PrintServerImpl extends UnicastRemoteObject implements PrintServer 
         return permissions != null && permissions.contains(requiredPermission);
     }
 
-    public boolean hasRole(Claims claims, List<String> requiredRole){
-        String role = claims.get("role", String.class);
-        return requiredRole.contains(role);
-    }
-
-   
-
     /**
-     * prints file filename on the specified printer
-     * @throws Exception 
-     */
+    * Prints the specified file on the specified printer.
+    * 
+    * @param token    the access token for authentication
+    * @param filename the name of the file to print
+    * @param printer  the name of the printer to use
+    * @return a message indicating the result of the operation
+    */
     @Override
     public String print(String token, String filename, String printer){
         if(!isRunning){
-            System.err.println("Server: Printer not running, unable to commit action");
+            LOGGER.warning("Server: Printer not running, unable to commit action");
             return "Printer is not running";
         }
-        Claims claims = validateToken(token);
+        Claims claim = validateToken(token);
         String requiredPermission = "print";
         
-        if(claims != null){
-            boolean permission = hasPermission(claims, requiredPermission);
+        if(claim != null){
+            boolean permission = hasPermission(claim, requiredPermission);
 
             if(permission){
-                System.out.println("Server: Printing document: " + filename);
-                return "print";   
+                LOGGER.info(claim.getSubject() + ": print");
+                return claim.getSubject() + ": print";     
             } else {
-                System.err.println("Server: Unauthorized, insufficient role or permission to print");
+                LOGGER.warning("Server: Unauthorized, insufficient role or permission to print");
                 return "Unauthorized: Insufficient role or permission to print";
             }
         } else {
-            System.err.println("Server: Unauthorized - Access token validation failed. User not authorized.");
-            return "User not is not authenticated";
+            LOGGER.warning("Server: Unauthorized - Access token validation failed. User not authorized.");
+            return "User not authorized";
         }
     }
 
     /**
-     * Lists the print queue for a given printer on the user's display
-     * in lines of the form !job number ? !filename?
-     */
+    * Lists the print queue for a given printer.
+    * 
+    * @param token   the access token for authentication
+    * @param printer the name of the printer
+    * @return a message indicating the result of the operation
+    */
     @Override
     public String queue(String token, String printer){     
         if(!isRunning){
-            System.err.println("Server: Printer not running, unable to commit action");
+            LOGGER.warning("Server: Printer not running, unable to commit action");
             return "Printer is not running";
         }
-        Claims claims = validateToken(token);
+        Claims claim = validateToken(token);
         String requiredPermission = "queue";
 
-        if (claims != null) {
-            boolean permission = hasPermission(claims, requiredPermission);
+        if (claim != null) {
+            boolean permission = hasPermission(claim, requiredPermission);
 
             if(permission){                
-                System.out.println("Pritner gives current queue");
-                return "queue";
+                LOGGER.info(claim.getSubject() + ": queue");
+                return claim.getSubject() + ": queue"; 
             } else {
-                System.err.println("Server: Unauthorized, insufficient role or permission to queue");
+                LOGGER.warning("Server: Unauthorized, insufficient role or permission to queue");
                 return "Unauthorized: Insufficient role or permission to queue";
             }           
 
         } else {
-            System.err.println("Server: Unauthorized - Access token validation failed. User not authorized.");
-            return "User not is not authenticated";
+            LOGGER.warning("Server: Unauthorized - Access token validation failed. User not authorized.");
+            return "User not authorized";
         }
     }
 
     /**
-     * moves job to the top of the queue
-     */
+    * Moves a print job to the top of the queue for the specified printer.
+    * 
+    * @param token   the access token for authentication
+    * @param printer the name of the printer
+    * @param job     the job number to move to the top
+    * @return a message indicating the result of the operation
+    */
     @Override
     public String topQueue(String token, String printer, int job){
         if(!isRunning){
-            System.err.println("Server: Printer not running, unable to commit action");
+            LOGGER.warning("Server: Printer not running, unable to commit action");
             return "Printer is not running";
         }
-        Claims claims = validateToken(token);
+        Claims claim = validateToken(token);
         String requiredPermission = "topQueue";
 
-        if (claims != null) {
-            boolean permission = hasPermission(claims, requiredPermission);
+        if (claim != null) {
+            boolean permission = hasPermission(claim, requiredPermission);
 
             if(permission){    
-                System.out.println("Printer moves job to the top of the queue");
-                return "topqueue";
+                LOGGER.info(claim.getSubject() + ": topqueue");
+                return claim.getSubject() + ": topqueue";
             } else {
-                System.err.println("Server: Unauthorized, insufficient role or permission to topqueue");
+                LOGGER.warning("Server: Unauthorized, insufficient role or permission to topqueue");
                 return "Unauthorized: Insufficient role or permission to topqueue";
             }  
         } else {
-            System.err.println("Server: Unauthorized - Access token validation failed. User not authorized.");
-            return "User not is not authenticated";
+            LOGGER.warning("Server: Unauthorized - Access token validation failed. User not authorized.");
+            return "User not authorized";
         }
     }
 
     /**
-     * starts the print server
-     * @throws RemoteException 
-     */
+    * Starts the printer.
+    * 
+    * @param token   the access token for authentication
+    * @return a message indicating the result of the operation
+    */
     @Override
     public String start(String token) {
         if(isRunning){
-            System.err.println("Server: Printer is alreadt running, unable to commit action");
+            LOGGER.warning("Server: Printer is alreadt running, unable to commit action");
             return "Printer is already running";
         }
-        Claims claims = validateToken(token);
+        Claims claim = validateToken(token);
         String requiredPermission = "start";
 
-        if (claims != null) {
-            boolean permission = hasPermission(claims, requiredPermission);
+        if (claim != null) {
+            boolean permission = hasPermission(claim, requiredPermission);
 
             if(permission){
                 isRunning = true;
-                System.out.println("Printer has been started");
-                return "start";
+                LOGGER.info(claim.getSubject() + ": start");
+                return claim.getSubject() + ": start";  
             } else {
-                System.err.println("Server: Unauthorized, insufficient role or permission to start");
+                LOGGER.warning("Server: Unauthorized, insufficient role or permission to start");
                 return "Unauthorized: Insufficient role or permission to start";
             } 
         } else {
-            System.err.println("Server: Unauthorized - Access token validation failed. User not authorized.");
-            return "User not is not authenticated";
+            LOGGER.warning("Server: Unauthorized - Access token validation failed. User not authorized.");
+            return "User not authorized";
         }
     }
 
     /**
-     * stops the print server
-     */
+    * Stops the printer.
+    * 
+    * @param token   the access token for authentication
+    * @return a message indicating the result of the operation
+    */
     @Override
     public String stop(String token){
         if(!isRunning){
-            System.err.println("Server: Printer is already not running, unable to commit action");
+            LOGGER.warning("Server: Printer is already not running, unable to commit action");
             return "Printer is already stopped";
         }
-        Claims claims = validateToken(token);
+        Claims claim = validateToken(token);
         String requiredPermission = "stop";
 
-        if (claims != null) {
-            boolean permission = hasPermission(claims, requiredPermission);
+        if (claim != null) {
+            boolean permission = hasPermission(claim, requiredPermission);
 
             if(permission){
                 isRunning = false;
-                System.out.println("Printer has been stopped");
-                return "stop";    
+                LOGGER.info(claim.getSubject() + ": stop");
+                return claim.getSubject() + ": stop";  
             } else {
-                System.err.println("Server: Unauthorized, insufficient role or permission to stop.");
+                LOGGER.warning("Server: Unauthorized, insufficient role or permission to stop.");
                 return "Unauthorized: Insufficient role or permission to stop";
             }    
         } else {
-            System.err.println("Server: Unauthorized - Access token validation failed. User not authorized.");
-            return "User not is not authenticated";
+            LOGGER.warning("Server: Unauthorized - Access token validation failed. User not authorized.");
+            return "User not authorized";
         }
     }
 
     /**
-     * stops the print server, clears the print queue and starts the print server again
-     * @throws RemoteException 
-     */
+    * Restarts the printer.
+    * 
+    * @param token   the access token for authentication
+    * @return a message indicating the result of the operation
+    */
     @Override
     public String restart(String token){
         if(isRunning){
-            System.err.println("Server: Printer not running, unable to commit action");
+            LOGGER.warning("Server: Printer not running, unable to commit action");
             return "Print has not been started to be able to restart";
         }
-        Claims claims = validateToken(token);
+        Claims claim = validateToken(token);
         String requiredPermission = "restart";
 
-        if (claims != null) {
-            boolean permission = hasPermission(claims, requiredPermission);
+        if (claim != null) {
+            boolean permission = hasPermission(claim, requiredPermission);
 
             if(permission){
-                System.out.println("Printer has been restarted");
-                return "restart"; 
+                LOGGER.info(claim.getSubject() + ": restart");
+                return claim.getSubject() + ": restart";    
             } else {
-                System.err.println("Server: Unauthorized, insufficient role or permission to restart.");
+                LOGGER.warning("Server: Unauthorized, insufficient role or permission to restart.");
                 return "Unauthorized: Insufficient role or permission to restart.";
             } 
         } else {
-            System.err.println("Server: Unauthorized - Access token validation failed. User not authorized.");
-            return "User not is not authenticated";
+            LOGGER.warning("Server: Unauthorized - Access token validation failed. User not authorized.");
+            return "User not authorized";
         }
     }
 
     /**
-     * prints status of printer on the user's display
-     */
+    * Prints the status on the specific printer.
+    * 
+    * @param token   the access token for authentication
+    * @param printer the name of the printer
+    * @return a message indicating the result of the operation
+    */
     @Override
     public String status(String token, String printer){
         if(!isRunning){
-            System.err.println("Server: Printer not running, unable to commit action");
+            LOGGER.warning("Server: Printer not running, unable to commit action");
             return "Printer is not running";
         }
-        Claims claims = validateToken(token);
+        Claims claim = validateToken(token);
         String requiredPermission = "status";
 
-        if (claims != null) {
-            boolean permission = hasPermission(claims, requiredPermission);
+        if (claim != null) {
+            boolean permission = hasPermission(claim, requiredPermission);
 
             if(permission){
-                System.out.println("Printer prints status");
-                return "status";  
+                LOGGER.info(claim.getSubject() + ": status");
+                return claim.getSubject() + ": status";    
             } else {
-                System.err.println("Server: Unauthorized, insufficient role or permission to status");
+                LOGGER.warning("Server: Unauthorized, insufficient role or permission to status");
                 return "Unauthorized: Insufficient role or permission to status";
             } 
         } else {
-            System.err.println("Server: Unauthorized - Access token validation failed. User not authorized.");
-            return "User not is not authenticated";
+            LOGGER.warning("Server: Unauthorized - Access token validation failed. User not authorized.");
+            return "User not authorized";
         }
     }
 
     /**
-     * prints the value of the parameter on the print server to the user's display
-     */
+    * Retrieves the value of a configuration parameter from the print server.
+    * 
+    * @param token     the access token for authentication
+    * @param parameter the name of the configuration parameter to read
+    * @return a message indicating the result of the operation or the parameter value
+    */
     @Override
     public String readConfig(String token, String parameter){
         if(!isRunning){
-            System.err.println("Server: Printer not running, unable to commit action");
+            LOGGER.warning("Server: Printer not running, unable to commit action");
             return "Printer is not running";
         }
-        Claims claims = validateToken(token);
+        Claims claim = validateToken(token);
         String requiredPermission = "readConfig";
 
-        if (claims != null) {
-            boolean permission = hasPermission(claims, requiredPermission);
+        if (claim != null) {
+            boolean permission = hasPermission(claim, requiredPermission);
 
             if(permission){
-                System.out.println("Printer reads value of parameter");
-                return "readConfig"; 
+                LOGGER.info(claim.getSubject() + ": readConfig");
+                return claim.getSubject() + ": readConfig"; 
             } else {
-                System.err.println("Server: Unauthorized, insufficient role or permission to readConfig");
+                LOGGER.warning("Server: Unauthorized, insufficient role or permission to readConfig");
                 return "Unauthorized: Insufficient role or permission to readConfig";
             } 
         } else {
-            System.err.println("Server: Unauthorized - Access token validation failed. User not authorized.");
-            return "User not is not authenticated";
+            LOGGER.warning("Server: Unauthorized - Access token validation failed. User not authorized.");
+            return "User not authorized";
         }
     }
 
     /**
-     * sets the parameter on the print server to value
-     */
+    * Updates the value of a configuration parameter on the print server.
+    * 
+    * @param token     the access token for authentication
+    * @param parameter the name of the configuration parameter to set
+    * @param value     the new value to assign to the configuration parameter
+    * @return a message indicating the result of the operation
+    */
     @Override
     public String setConfig(String token, String parameter, String value){
         if(!isRunning){
-            System.err.println("Server: Printer not running, unable to commit action");
+            LOGGER.warning("Server: Printer not running, unable to commit action");
             return "Printer is not running";
         }
-        Claims claims = validateToken(token);
+        Claims claim = validateToken(token);
         String requiredPermission = "setConfig";
 
-        if (claims != null) {
-            boolean permission = hasPermission(claims, requiredPermission);
+        if (claim != null) {
+            boolean permission = hasPermission(claim, requiredPermission);
 
             if(permission){
-                System.out.println("Printer sets value of parameter");
-                return "setConfig"; 
+                LOGGER.info(claim.getSubject() + ": setConfig");
+                return claim.getSubject() + ": setConfig";    
             } else {
-                System.err.println("Server: Unauthorized, insufficient role or permission to setConfig");
+                LOGGER.warning("Server: Unauthorized, insufficient role or permission to setConfig");
                 return "Unauthorized: Insufficient role or permission to setConfig";
             }
         } else {
-            System.err.println("Server: Unauthorized - Access token validation failed. User not authorized.");
-            return "User not is not authenticated";
+            LOGGER.warning("Server: Unauthorized - Access token validation failed. User not authorized.");
+            return "User not authorized";
         }
     }
 }

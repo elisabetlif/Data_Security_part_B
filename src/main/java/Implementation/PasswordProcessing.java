@@ -9,8 +9,16 @@ import java.io.IOException;
 
 public class PasswordProcessing {
 
-    private static final String JSON_FILE = "/Users/elisabetbirgisdottir/Documents/GitHub/Data_Security_part_B/src/main/java/resource/PublicFile.json";
+    private static final String JSON_FILE = "src\\main\\java\\resource\\PublicFile.json";
 
+    /**
+    * Validates a username and password against stored credentials in a JSON file.
+    *
+    * @param username The username.
+    * @param password The plaintext password
+    * @return returns true if the username exists and the password is valid;
+    *          otherwise false.
+    */
     public boolean passwordPros(String username, String password){
         try{
             //parsing the PublicFile.json
@@ -18,20 +26,17 @@ public class PasswordProcessing {
             JsonNode rootNode = mapper.readTree(new File(JSON_FILE));
             JsonNode usersNode = rootNode.path("users");
 
-            //iterate over the users and check credentials
             for (JsonNode userNode : usersNode) {
                 String storedUsername = userNode.path("user_id").asText();
                 String storedPasswordHash = userNode.path("hash").asText();
 
                 if (storedUsername.equalsIgnoreCase(username)) {
-                    // Verify the password using Argon2
                     Argon2 argon2 = Argon2Factory.create();
                     char[] passwordChars = password.toCharArray();
                     boolean isValid = argon2.verify(storedPasswordHash, passwordChars);
 
-                    // Clean up password array after use
                     argon2.wipeArray(passwordChars);
-                    return isValid;  // Return true if the password matches
+                    return isValid; 
                 }
             }
 
@@ -40,14 +45,14 @@ public class PasswordProcessing {
         }
         return false;  
     }
-
-    //    PasswordVer("Alice", "Fall2019");
-    //    PasswordVer("GeorgeT", "ILoveManchesterUnited");
-    //    PasswordVer("Cecilia", "AfterAllThisTime?");
-    //    PasswordVer("David", "Boston1978");
-    //    PasswordVer("Erica", "IHatePatricia");
-    //    PasswordVer("Fred", "DefinitelyNotGeorge");
-    //    PasswordVer("George", "DefinitelyNotFred");
-    //    PasswordVer("Henry", "Tequilaismylove")
-    //    PasswordVer("Ida", "youaresayingitwrong")
 }
+
+//    PasswordVer("Alice", "Fall2019");
+//    PasswordVer("GeorgeT", "ILoveManchesterUnited");
+//    PasswordVer("Cecilia", "AfterAllThisTime?");
+//    PasswordVer("David", "Boston1978");
+//    PasswordVer("Erica", "IHatePatricia");
+//    PasswordVer("Fred", "DefinitelyNotGeorge");
+//    PasswordVer("George", "DefinitelyNotFred");
+//    PasswordVer("Henry", "Tequilaismylove")
+//    PasswordVer("Ida", "youaresayingitwrong")

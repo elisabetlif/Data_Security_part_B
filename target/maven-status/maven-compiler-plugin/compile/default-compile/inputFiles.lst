@@ -1,11 +1,10 @@
-/Users/elisabetbirgisdottir/Documents/GitHub/Data_Security_part_B/src/main/java/ServerMain.java
-/Users/elisabetbirgisdottir/Documents/GitHub/Data_Security_part_B/src/main/java/lib/SessionManager.java
-/Users/elisabetbirgisdottir/Documents/GitHub/Data_Security_part_B/src/main/java/Interface/AuthServer.java
-/Users/elisabetbirgisdottir/Documents/GitHub/Data_Security_part_B/src/main/java/lib/AuthenticationResponse.java
-/Users/elisabetbirgisdottir/Documents/GitHub/Data_Security_part_B/src/main/java/ClientMain.java
-/Users/elisabetbirgisdottir/Documents/GitHub/Data_Security_part_B/src/main/java/Implementation/AuthServerImpl.java
-/Users/elisabetbirgisdottir/Documents/GitHub/Data_Security_part_B/src/main/java/App.java
-/Users/elisabetbirgisdottir/Documents/GitHub/Data_Security_part_B/src/main/java/Implementation/PrintServerImpl.java
-/Users/elisabetbirgisdottir/Documents/GitHub/Data_Security_part_B/src/main/java/Implementation/PasswordProcessing.java
-/Users/elisabetbirgisdottir/Documents/GitHub/Data_Security_part_B/src/main/java/Interface/PrintServer.java
-/Users/elisabetbirgisdottir/Documents/GitHub/Data_Security_part_B/src/main/java/Implementation/UserRolesandPermissions.java
+C:\Users\astri\Documents\DTU\1.ÖNN\Data Security\Assignment2\assignment2_B\Data_Security_part_B\src\main\java\ServerMain.java
+C:\Users\astri\Documents\DTU\1.ÖNN\Data Security\Assignment2\assignment2_B\Data_Security_part_B\src\main\java\lib\SessionManager.java
+C:\Users\astri\Documents\DTU\1.ÖNN\Data Security\Assignment2\assignment2_B\Data_Security_part_B\src\main\java\Interface\PrintServer.java
+C:\Users\astri\Documents\DTU\1.ÖNN\Data Security\Assignment2\assignment2_B\Data_Security_part_B\src\main\java\Implementation\PasswordProcessing.java
+C:\Users\astri\Documents\DTU\1.ÖNN\Data Security\Assignment2\assignment2_B\Data_Security_part_B\src\main\java\ClientMain.java
+C:\Users\astri\Documents\DTU\1.ÖNN\Data Security\Assignment2\assignment2_B\Data_Security_part_B\src\main\java\Interface\AuthServer.java
+C:\Users\astri\Documents\DTU\1.ÖNN\Data Security\Assignment2\assignment2_B\Data_Security_part_B\src\main\java\Implementation\UserRolesandPermissions.java
+C:\Users\astri\Documents\DTU\1.ÖNN\Data Security\Assignment2\assignment2_B\Data_Security_part_B\src\main\java\Implementation\AuthServerImpl.java
+C:\Users\astri\Documents\DTU\1.ÖNN\Data Security\Assignment2\assignment2_B\Data_Security_part_B\src\main\java\lib\AuthenticationResponse.java
+C:\Users\astri\Documents\DTU\1.ÖNN\Data Security\Assignment2\assignment2_B\Data_Security_part_B\src\main\java\Implementation\PrintServerImpl.java

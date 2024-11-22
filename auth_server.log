@@ -1,0 +1,18 @@
+Nov 22, 2024 6:33:24 PM Implementation.AuthServerImpl login
+WARNING: Server: Authentication failed. Username or password incorrect.
+Nov 22, 2024 6:33:25 PM Implementation.AuthServerImpl login
+INFO: User: Alice is logged in
+Nov 22, 2024 6:33:25 PM Implementation.AuthServerImpl logout
+INFO: User: Alice is logged out
+Nov 22, 2024 6:33:25 PM Implementation.AuthServerImpl login
+INFO: User: George is logged in
+Nov 22, 2024 6:33:25 PM Implementation.AuthServerImpl logout
+INFO: User: George is logged out
+Nov 22, 2024 6:33:25 PM Implementation.AuthServerImpl login
+INFO: User: GeorgeT is logged in
+Nov 22, 2024 6:34:25 PM Implementation.AuthServerImpl refreshAccessToken
+INFO: Server: New refresh token and access token created for GeorgeT
+Nov 22, 2024 6:36:25 PM Implementation.AuthServerImpl refreshAccessToken
+WARNING: Server: Invalid refresh token.
+Nov 22, 2024 6:36:25 PM Implementation.AuthServerImpl logout
+INFO: User: GeorgeT is logged out

@@ -16,50 +16,53 @@ public class ClientMain {
 
     public static void main(String[] args) throws RemoteException {
 
-        setupServers();            
+        setupServers();
+        logInUser("Alice", "Fall2017");
         logInUser("Alice", "Fall2019");
 
-        System.out.println(username + ": " + printServer.start(accessToken));
-
-        System.out.println(username + ": " + printServer.print(accessToken, "document.txt", "Printer1"));
-        System.out.println(username + ": " + printServer.print(accessToken, "file.txt", "Printer1"));
-
-        System.out.println(username + ": " + printServer.queue(accessToken, "Printer1"));
-        
-        System.out.println(username + ": " + authServer.logout(refreshToken, username));
-
-        System.out.println(username + ": " + printServer.print(accessToken, "document2", "Printer1"));
+        System.out.println(printServer.start(accessToken));
+        System.out.println(printServer.print(accessToken, "document.txt", "Printer1"));
+        System.out.println(printServer.print(accessToken, "file.txt", "Printer1"));
+        System.out.println(printServer.queue(accessToken, "Printer1"));
+        System.out.println(authServer.logout(refreshToken, username));
+        System.out.println(printServer.print(accessToken, "document2", "Printer1"));
 
         logInUser("George", "DefinitelyNotFred");
 
-        System.out.println(username + ": " + printServer.print(accessToken, "file.txt", "Printer2"));
-
-        System.out.println(username + ": " + printServer.stop(accessToken));
-
-        System.out.println(username + ": " + authServer.logout(refreshToken, username));
-
+        System.out.println(printServer.print(accessToken, "file.txt", "Printer2"));
+        System.out.println(printServer.stop(accessToken));
+        System.out.println(authServer.logout(refreshToken, username));
 
         logInUser("GeorgeT", "ILoveManchesterUnited");
 
-        System.out.println(username + ": " + printServer.setConfig(accessToken, "Paper", "A4"));
+        System.out.println(printServer.setConfig(accessToken, "Paper", "A4"));
 
+        System.out.println("----------------------------------------------------");
+        System.out.println("Delay for 1 minutes");
+        System.out.println("----------------------------------------------------");
         addDelay();
 
-        System.out.println(username + ": " + printServer.readConfig(accessToken, "Paper"));
-        
+        System.out.println(printServer.readConfig(accessToken, "Paper"));
+
+        System.out.println("--------------------------------------------------");
         System.out.println(username + ": user refreshes for new access token");
+        System.out.println("-----------------------------------------------------");
         refreshAccessToken();
 
-        System.out.println(username + ": " + printServer.readConfig(accessToken, "Paper"));
+        System.out.println(printServer.readConfig(accessToken, "Paper"));
 
+        System.out.println("----------------------------------------------------");
+        System.out.println("Delay for 2 minutes");
+        System.out.println("----------------------------------------------------");
         addDelay();
         addDelay();
 
-        System.out.println(username + ": " + printServer.setConfig(accessToken, "Paper", "A5"));
-        System.out.println(username + ": " + authServer.logout(refreshToken, username));
+        System.out.println(printServer.setConfig(accessToken, "Paper", "A5"));
+        System.out.println("--------------------------------------------------");
+        System.out.println(username + ": user refreshes for new access token");
+        System.out.println("-----------------------------------------------------");
+        refreshAccessToken();
 
-
-        
         synchronized (ServerMain.class) {
             try {
                 ServerMain.class.wait();
@@ -69,9 +72,12 @@ public class ClientMain {
         }
     }
 
-    private static void setupServers(){
+    /**
+     * Sets up connection to remote servers.
+     */
+    private static void setupServers() {
         try {
-            Registry registry = LocateRegistry.getRegistry("localhost", 1099);
+            Registry registry = LocateRegistry.getRegistry("localhost", 1097);
 
             authServer = (AuthServer) registry.lookup("AuthServer");
             printServer = (PrintServer) registry.lookup("PrintServer");
@@ -80,24 +86,35 @@ public class ClientMain {
         }
     }
 
+    /**
+     * Logs in a user by interacting with the AuthServer
+     * 
+     * @param user     The username
+     * @param password The password
+     * @throws RemoteException If an error occurs during remote method invocation.
+     */
     private static void logInUser(String user, String password) throws RemoteException {
         AuthenticationResponse authResponse = authServer.login(user, password);
-        if(authResponse == null){
+        if (authResponse == null) {
             System.out.println("Username or password is incorrect");
         } else {
-            System.out.println("User: "+ user + " is logged in");
+            System.out.println("User: " + user + " is logged in");
             username = user;
             accessToken = authResponse.getAccessToken();
             refreshToken = authResponse.getRefreshToken();
         }
     }
 
+    /**
+     * Refreshes the access token using the refresh token
+     * 
+     * @throws RemoteException If an error occurs during remote method invocation.
+     */
     private static void refreshAccessToken() throws RemoteException {
         AuthenticationResponse authResponse = authServer.refreshAccessToken(refreshToken, accessToken);
-    
+
         if (authResponse == null) {
             System.out.println("Refresh token expired or invalid. Please log in again.");
-            logInUser("George", "DefinitelyNotFred");
         } else {
             System.out.println("Access token refreshed.");
             accessToken = authResponse.getAccessToken();
@@ -105,6 +122,9 @@ public class ClientMain {
         }
     }
 
+    /**
+     * Adds a delay of one minute.
+     */
     private static void addDelay() {
         try {
             Thread.sleep(60000); // 60 seconds
@@ -113,6 +133,3 @@ public class ClientMain {
         }
     }
 }
-
-
-
